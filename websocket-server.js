@@ -115,7 +115,7 @@ class GlobalWebSocketServer {
 
   initialize() {
     const port = process.env.PORT || 10000;
-    const httpServer = new Server();
+    const httpServer = require("http").createServer();
     this.io = new SocketIOServer(httpServer, {
       cors: {
         origin: "*",
