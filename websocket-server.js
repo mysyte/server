@@ -117,7 +117,7 @@ class GlobalWebSocketServer {
     const httpServer = new Server();
     this.io = new SocketIOServer(httpServer, {
       cors: {
-        origin: "https://momocoin-bay.vercel.app",
+        origin: "*",
         methods: ["GET", "POST"]
       }
     });
