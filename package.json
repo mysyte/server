@@ -3,12 +3,14 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "node websocket-server.js",
+    "start": "node server/websocket-server.js",
     "dev": "node websocket-server.js"
   },
   "dependencies": {
-    "ws": "^8.18.3",
-    "@prisma/client": "^6.18.0"
+    "@prisma/client": "^6.18.0",
+    "@types/socket.io": "^3.0.1",
+    "socket.io": "^4.8.1",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "prisma": "^6.18.0"
