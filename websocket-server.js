@@ -1,7 +1,7 @@
 const { Server } = require('http');
 const { Server: SocketIOServer } = require('socket.io');
 
-// True Random Market Engine (Same as your chart expects)
+// True Random Market Engine
 class TrueMarketEngine {
   constructor() {
     this.currentPrice = 1.00;
@@ -51,26 +51,26 @@ class TrueMarketEngine {
   }
 
   calculateTrueRandomMovement(currentPrice, isHistorical = false) {
-  let movement = 0;
-  const direction = Math.random();
-  const strength = Math.random() * 0.0050;
-  const struggle = Math.random() * 0.0020;
-  const fakeout = Math.random() > 0.9 ? (Math.random() - 0.5) * 0.0100 : 0;
-  const volatilityBurst = Math.random() > 0.098 ? (Math.random() - 0.5) * 0.002 : 0;
-  
-  if (direction > 0.55) {  // 45% UP
-    movement = strength + struggle + fakeout + volatilityBurst;
-  } else if (direction < 0.45) {  // 45% DOWN  
-    movement = -strength - struggle + fakeout + volatilityBurst;
-  } else {  // 10% SIDEWAYS
-    movement = (Math.random() - 0.5) * 0.0003 + fakeout;
+    let movement = 0;
+    const direction = Math.random();
+    const strength = Math.random() * 0.0050;
+    const struggle = Math.random() * 0.0020;
+    const fakeout = Math.random() > 0.9 ? (Math.random() - 0.5) * 0.0100 : 0;
+    const volatilityBurst = Math.random() > 0.098 ? (Math.random() - 0.5) * 0.002 : 0;
+    
+    if (direction > 0.55) {
+      movement = strength + struggle + fakeout + volatilityBurst;
+    } else if (direction < 0.45) {
+      movement = -strength - struggle + fakeout + volatilityBurst;
+    } else {
+      movement = (Math.random() - 0.5) * 0.0003 + fakeout;
+    }
+    
+    const volumeFactor = 1 + (Math.random() * 0.5);
+    movement *= volumeFactor;
+    
+    return movement;
   }
-  
-  const volumeFactor = 1 + (Math.random() * 0.5);
-  movement *= volumeFactor;
-  
-  return movement;
-}
 
   getCurrentData() {
     const timestamp = Date.now();
@@ -113,7 +113,8 @@ class GlobalWebSocketServer {
     this.isInitialized = false;
   }
 
-  initialize(port = 3001) {
+  initialize() {
+    const port = process.env.PORT || 10000;
     const httpServer = new Server();
     this.io = new SocketIOServer(httpServer, {
       cors: {
@@ -137,7 +138,6 @@ class GlobalWebSocketServer {
       console.log(`🔌 Client connected: ${clientId}`);
       this.connectedClients.set(clientId, socket);
 
-      // Send current price and candle data immediately (matches your hook format)
       const currentData = this.marketEngine.getCurrentData();
       socket.emit('price_update', {
         type: 'price_update',
@@ -157,7 +157,6 @@ class GlobalWebSocketServer {
   }
 
   startPriceBroadcast() {
-    // Update price every second - same for all clients
     setInterval(() => {
       this.broadcastPriceUpdate();
     }, 1000);
@@ -166,7 +165,6 @@ class GlobalWebSocketServer {
   broadcastPriceUpdate() {
     const update = this.marketEngine.getCurrentData();
     
-    // Broadcast to ALL connected clients (matches your hook format)
     if (this.io) {
       this.io.emit('price_update', {
         type: 'price_update',
@@ -186,7 +184,6 @@ class GlobalWebSocketServer {
       isGlobal: true
     };
 
-    // Broadcast trade to all clients
     if (this.io) {
       this.io.emit('trade_executed', tradeConfirmation);
     }
@@ -208,6 +205,6 @@ class GlobalWebSocketServer {
 
 // Start the server
 const globalWebSocketServer = new GlobalWebSocketServer();
-globalWebSocketServer.initialize(3001);
+globalWebSocketServer.initialize();
 
 module.exports = { globalWebSocketServer };
