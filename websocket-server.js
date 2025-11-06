@@ -5,9 +5,10 @@ const { Server: SocketIOServer } = require('socket.io');
 class TrueMarketEngine {
   constructor() {
     this.currentPrice = 1.00;
+    this.basePrice = 1.00; // Starting price for percentage calculation
     this.currentCandle = this.createNewCandle();
     this.historicalCandles = [];
-    this.userPositions = new Map(); // Track user positions
+    this.userPositions = new Map();
     this.generateHistoricalData();
     console.log('🎲 True Random Market Engine Started on Server');
   }
@@ -88,7 +89,7 @@ class TrueMarketEngine {
   // Calculate actual profit/loss based on entry price
   getUserProfitLoss(userId) {
     const position = this.userPositions.get(userId);
-    if (!position) return 0;
+    if (!position) return null;
     
     const currentValue = (position.amount / position.entryPrice) * this.currentPrice;
     const profitLoss = currentValue - position.amount;
@@ -125,8 +126,12 @@ class TrueMarketEngine {
       this.currentCandle = this.createNewCandle();
     }
 
+    // Calculate percentage change from base price $1.00
+    const change = ((this.currentPrice - this.basePrice) / this.basePrice) * 100;
+
     return {
       price: parseFloat(this.currentPrice.toFixed(4)),
+      change: parseFloat(change.toFixed(2)), // Percentage from $1.00
       timestamp,
       currentCandle: this.currentCandle,
       candleData: [...this.historicalCandles]
