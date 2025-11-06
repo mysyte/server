@@ -53,20 +53,20 @@ class TrueMarketEngine {
   calculateTrueRandomMovement(currentPrice, isHistorical = false) {
   let movement = 0;
   const direction = Math.random();
-  const strength = Math.random() * 0.0010; // Reduced from 0.0050
-  const struggle = Math.random() * 0.0005; // Reduced from 0.0020
-  const fakeout = Math.random() > 0.9 ? (Math.random() - 0.5) * 0.0020 : 0; // Reduced from 0.0100
-  const volatilityBurst = Math.random() > 0.098 ? (Math.random() - 0.5) * 0.0005 : 0; // Reduced from 0.002
+  const strength = Math.random() * 0.0003; // Very small
+  const struggle = Math.random() * 0.0001; // Tiny
+  const fakeout = Math.random() > 0.95 ? (Math.random() - 0.5) * 0.0005 : 0; // Rare and small
+  const volatilityBurst = Math.random() > 0.99 ? (Math.random() - 0.5) * 0.0002 : 0; // Very rare
   
   if (direction > 0.55) {  // 45% UP
     movement = strength + struggle + fakeout + volatilityBurst;
   } else if (direction < 0.45) {  // 45% DOWN  
     movement = -strength - struggle + fakeout + volatilityBurst;
   } else {  // 10% SIDEWAYS
-    movement = (Math.random() - 0.5) * 0.0001 + fakeout; // Reduced from 0.0003
+    movement = (Math.random() - 0.5) * 0.00005 + fakeout; // Very tiny
   }
   
-  const volumeFactor = 1 + (Math.random() * 0.3); // Reduced from 0.5
+  const volumeFactor = 1 + (Math.random() * 0.1); // Minimal amplification
   movement *= volumeFactor;
   
   return movement;
