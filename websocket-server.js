@@ -51,26 +51,26 @@ class TrueMarketEngine {
   }
 
   calculateTrueRandomMovement(currentPrice, isHistorical = false) {
-    let movement = 0;
-    const direction = Math.random();
-    const strength = Math.random() * 0.0050;
-    const struggle = Math.random() * 0.0020;
-    const fakeout = Math.random() > 0.9 ? (Math.random() - 0.5) * 0.0100 : 0;
-    const volatilityBurst = Math.random() > 0.098 ? (Math.random() - 0.5) * 0.002 : 0;
-    
-    if (direction > 0.55) {
-      movement = strength + struggle + fakeout + volatilityBurst;
-    } else if (direction < 0.45) {
-      movement = -strength - struggle + fakeout + volatilityBurst;
-    } else {
-      movement = (Math.random() - 0.5) * 0.0003 + fakeout;
-    }
-    
-    const volumeFactor = 1 + (Math.random() * 0.5);
-    movement *= volumeFactor;
-    
-    return movement;
+  let movement = 0;
+  const direction = Math.random();
+  const strength = Math.random() * 0.0050;
+  const struggle = Math.random() * 0.0020;
+  const fakeout = Math.random() > 0.9 ? (Math.random() - 0.5) * 0.0100 : 0;
+  const volatilityBurst = Math.random() > 0.098 ? (Math.random() - 0.5) * 0.002 : 0;
+  
+  if (direction > 0.55) {  // 45% UP
+    movement = strength + struggle + fakeout + volatilityBurst;
+  } else if (direction < 0.45) {  // 45% DOWN  
+    movement = -strength - struggle + fakeout + volatilityBurst;
+  } else {  // 10% SIDEWAYS
+    movement = (Math.random() - 0.5) * 0.0003 + fakeout;
   }
+  
+  const volumeFactor = 1 + (Math.random() * 0.5);
+  movement *= volumeFactor;
+  
+  return movement;
+}
 
   getCurrentData() {
     const timestamp = Date.now();
