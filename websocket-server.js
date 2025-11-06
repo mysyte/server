@@ -54,25 +54,26 @@ class TrueMarketEngine {
   let movement = 0;
   const direction = Math.random();
   
-  // BTC-like movements (small but realistic)
-  const strength = Math.random() * 0.0020; // Normal BTC volatility
-  const struggle = Math.random() * 0.0010;
-  const fakeout = Math.random() > 0.9 ? (Math.random() - 0.5) * 0.0050 : 0;
-  const volatilityBurst = Math.random() > 0.95 ? (Math.random() - 0.5) * 0.0030 : 0;
+  // Wealthsimple-style: Small, realistic movements
+  const strength = Math.random() * 0.0015; // Smaller movements
+  const struggle = Math.random() * 0.0008;
+  const fakeout = Math.random() > 0.92 ? (Math.random() - 0.5) * 0.0030 : 0;
+  const volatilityBurst = Math.random() > 0.96 ? (Math.random() - 0.5) * 0.0020 : 0;
   
-  if (direction > 0.55) {  // 45% UP
+  // More balanced direction distribution
+  if (direction > 0.52) {  // 48% UP
     movement = strength + struggle + fakeout + volatilityBurst;
-  } else if (direction < 0.45) {  // 45% DOWN  
+  } else if (direction < 0.48) {  // 48% DOWN  
     movement = -strength - struggle + fakeout + volatilityBurst;
-  } else {  // 10% SIDEWAYS
-    movement = (Math.random() - 0.5) * 0.0005 + fakeout;
+  } else {  // 4% SIDEWAYS (reduced)
+    movement = (Math.random() - 0.5) * 0.0003 + fakeout;
   }
   
-  const volumeFactor = 1 + (Math.random() * 0.3);
+  const volumeFactor = 1 + (Math.random() * 0.2); // Reduced amplification
   movement *= volumeFactor;
   
-  // Ensure realistic BTC-like movements (0.1% - 2% typical)
-  movement = Math.max(-0.02, Math.min(0.02, movement));
+  // Wealthsimple-like: Conservative movements (0.05% - 1.5% typical)
+  movement = Math.max(-0.015, Math.min(0.015, movement));
   
   return movement;
 }
