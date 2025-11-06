@@ -7,6 +7,7 @@ class TrueMarketEngine {
     this.currentPrice = 1.00;
     this.currentCandle = this.createNewCandle();
     this.historicalCandles = [];
+    this.userPositions = new Map(); // Track user positions
     this.generateHistoricalData();
     console.log('🎲 True Random Market Engine Started on Server');
   }
@@ -51,32 +52,57 @@ class TrueMarketEngine {
   }
 
   calculateTrueRandomMovement(currentPrice, isHistorical = false) {
-  let movement = 0;
-  const direction = Math.random();
-  
-  // Wealthsimple-style: Small, realistic movements
-  const strength = Math.random() * 0.0015; // Smaller movements
-  const struggle = Math.random() * 0.0008;
-  const fakeout = Math.random() > 0.92 ? (Math.random() - 0.5) * 0.0030 : 0;
-  const volatilityBurst = Math.random() > 0.96 ? (Math.random() - 0.5) * 0.0020 : 0;
-  
-  // More balanced direction distribution
-  if (direction > 0.52) {  // 48% UP
-    movement = strength + struggle + fakeout + volatilityBurst;
-  } else if (direction < 0.48) {  // 48% DOWN  
-    movement = -strength - struggle + fakeout + volatilityBurst;
-  } else {  // 4% SIDEWAYS (reduced)
-    movement = (Math.random() - 0.5) * 0.0003 + fakeout;
+    let movement = 0;
+    const direction = Math.random();
+    
+    // Wealthsimple-style: Small, realistic movements
+    const strength = Math.random() * 0.0015;
+    const struggle = Math.random() * 0.0008;
+    const fakeout = Math.random() > 0.92 ? (Math.random() - 0.5) * 0.0030 : 0;
+    const volatilityBurst = Math.random() > 0.96 ? (Math.random() - 0.5) * 0.0020 : 0;
+    
+    if (direction > 0.52) {
+      movement = strength + struggle + fakeout + volatilityBurst;
+    } else if (direction < 0.48) {
+      movement = -strength - struggle + fakeout + volatilityBurst;
+    } else {
+      movement = (Math.random() - 0.5) * 0.0003 + fakeout;
+    }
+    
+    const volumeFactor = 1 + (Math.random() * 0.2);
+    movement *= volumeFactor;
+    movement = Math.max(-0.015, Math.min(0.015, movement));
+    
+    return movement;
   }
-  
-  const volumeFactor = 1 + (Math.random() * 0.2); // Reduced amplification
-  movement *= volumeFactor;
-  
-  // Wealthsimple-like: Conservative movements (0.05% - 1.5% typical)
-  movement = Math.max(-0.015, Math.min(0.015, movement));
-  
-  return movement;
-}
+
+  // Track user positions for Wealthsimple-style profit calculation
+  addUserPosition(userId, entryPrice, amount) {
+    this.userPositions.set(userId, {
+      entryPrice,
+      amount,
+      entryTime: Date.now()
+    });
+  }
+
+  // Calculate actual profit/loss based on entry price
+  getUserProfitLoss(userId) {
+    const position = this.userPositions.get(userId);
+    if (!position) return 0;
+    
+    const currentValue = (position.amount / position.entryPrice) * this.currentPrice;
+    const profitLoss = currentValue - position.amount;
+    const profitLossPercent = (profitLoss / position.amount) * 100;
+    
+    return {
+      entryPrice: position.entryPrice,
+      currentPrice: this.currentPrice,
+      amount: position.amount,
+      currentValue,
+      profitLoss,
+      profitLossPercent
+    };
+  }
 
   getCurrentData() {
     const timestamp = Date.now();
@@ -99,11 +125,8 @@ class TrueMarketEngine {
       this.currentCandle = this.createNewCandle();
     }
 
-    const change = ((this.currentPrice - 1.00) / 1.00) * 100;
-
     return {
       price: parseFloat(this.currentPrice.toFixed(4)),
-      change: parseFloat(change.toFixed(2)),
       timestamp,
       currentCandle: this.currentCandle,
       candleData: [...this.historicalCandles]
@@ -124,11 +147,7 @@ class GlobalWebSocketServer {
     const httpServer = require("http").createServer();
     this.io = new SocketIOServer(httpServer, {
       cors: {
-        origin: [
-           "https://momocoin-bay.vercel.app",
-           "https://yourdomain.vercel.app",
-           "http://localhost:3000"
-        ],
+        origin: "*",
         methods: ["GET", "POST"]
       }
     });
@@ -161,7 +180,12 @@ class GlobalWebSocketServer {
       });
 
       socket.on('place_trade', (tradeData) => {
-        this.handleTrade(tradeData);
+        this.handleTrade(clientId, tradeData);
+      });
+
+      socket.on('get_position_value', () => {
+        const position = this.marketEngine.getUserProfitLoss(clientId);
+        socket.emit('position_update', position);
       });
     });
   }
@@ -180,11 +204,23 @@ class GlobalWebSocketServer {
         type: 'price_update',
         payload: update
       });
+
+      // Also broadcast position updates to all clients
+      this.connectedClients.forEach((socket, clientId) => {
+        const position = this.marketEngine.getUserProfitLoss(clientId);
+        if (position) {
+          socket.emit('position_update', position);
+        }
+      });
     }
   }
 
-  handleTrade(tradeData) {
+  handleTrade(clientId, tradeData) {
     const currentPrice = this.marketEngine.currentPrice;
+    
+    // Record user position for Wealthsimple-style tracking
+    this.marketEngine.addUserPosition(clientId, currentPrice, tradeData.amount);
+    
     const tradeConfirmation = {
       ...tradeData,
       id: `trade_${Date.now()}`,
