@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
@@ -9,34 +9,39 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(uuid())
-  // Profile Data - One True Source
-  fullName    String?
-  email       String?  @unique
-  phone       String?
-  username    String?  @unique
-  password    String?
-  walletAddress String? @unique
-  isVerified  Boolean  @default(false)
-  
-  // Balances - Direct on User Model
-  momoBalance   Float @default(0.00)
-  walletBalance Float @default(0.00)
-  
-  // Timestamps
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  verifiedAt  DateTime?
-  
-  // Relations
-  orders           Order[]
-  tradingAccounts  TradingAccount[]
-  transactions     Transaction[]
-  verificationToken String?
+  id                 String           @id @default(uuid())
+  fullName           String?
+  email              String?          @unique
+  phone              String?
+  username           String?          @unique
+  password           String?
+  walletAddress      String?          @unique
+  isVerified         Boolean          @default(false)
+  momoBalance        Float            @default(0.00)
+  walletBalance      Float            @default(0.00)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  verifiedAt         DateTime?
+  verificationToken  String?
   verificationSentAt DateTime?
+  deposits           Deposit[]
+  orders             Order[]
+  tradingAccounts    TradingAccount[]
+  transactions       Transaction[]
+  withdrawals        Withdrawal[]
+  isAdmin     Boolean  @default(false)
+}
 
-  withdrawals  Withdrawal[]
-  deposits     Deposit[]
+model MarketSettings {
+  id           Int      @id @default(1)
+  marketCap    Float
+  volume24h    Float
+  targetPrice  Float
+  trendDirection String
+  trendStrength Float
+  isLocked     Boolean
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model TradingAccount {
@@ -44,66 +49,64 @@ model TradingAccount {
   accountType String   @default("LIVE")
   status      String   @default("PENDING")
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Order {
   id        String   @id @default(cuid())
   userId    String
-  type      String   // BUY or SELL
+  type      String
   symbol    String
   volume    Float
   price     Float
   total     Float
   profit    Float?
-  status    String   // FILLED, SOLD, CANCELLED
+  status    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Transaction {
-  id        String   @id @default(uuid())
-  type      TransactionType
-  amount    Float
-  price     Float?
-  totalValue Float?
-  timestamp DateTime @default(now())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenId   String?
-  token     Token?   @relation(fields: [tokenId], references: [id], onDelete: Cascade)
-
-  status        TransactionStatus @default(PENDING)
-  paymentMethod String?
-  externalId    String?  // Stripe/Flutterwave payment ID
-  accountDetails String? // For withdrawals (bank account, mobile number)
-  
+  id             String            @id @default(uuid())
+  type           TransactionType
+  amount         Float
+  price          Float?
+  totalValue     Float?
+  timestamp      DateTime          @default(now())
+  userId         String
+  tokenId        String?
+  status         TransactionStatus @default(PENDING)
+  paymentMethod  String?
+  externalId     String?
+  accountDetails String?
+  token          Token?            @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Token {
-  id          String   @id @default(uuid())
-  name        String   @default("MomoCoin")
-  symbol      String   @default("MOMO")
-  totalSupply String   @default("100000000000000")
-  currentPrice Float   @default(1.00)
-  isLocked    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  reserves    Reserve[]
-  transactions Transaction[]
-  priceHistory PriceHistory[]
-  priceVolatility Float @default(0.02)
-  lastPriceUpdate DateTime @default(now())
-  volume24h   Float    @default(0)
+  id              String         @id @default(uuid())
+  name            String         @default("MomoCoin")
+  symbol          String         @default("MOMO")
+  totalSupply     String         @default("100000000000000")
+  currentPrice    Float          @default(1.00)
+  isLocked        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  priceVolatility Float          @default(0.02)
+  lastPriceUpdate DateTime       @default(now())
+  volume24h       Float          @default(0)
+  priceHistory    PriceHistory[]
+  reserves        Reserve[]
+  transactions    Transaction[]
 }
 
 model Reserve {
-  id       String @id @default(uuid())
-  tokenId  String
-  balance  String @default("100000000000000")
-  token    Token  @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+  id      String @id @default(uuid())
+  tokenId String
+  balance String @default("100000000000000")
+  token   Token  @relation(fields: [tokenId], references: [id], onDelete: Cascade)
 }
 
 model PriceHistory {
@@ -112,6 +115,59 @@ model PriceHistory {
   timestamp DateTime @default(now())
   tokenId   String
   token     Token    @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+}
+
+model Withdrawal {
+  id                 String   @id @default(uuid())
+  userId             String
+  userEmail          String
+  userName           String
+  amount             Float
+  method             String
+  status             String
+  bankName           String?
+  accountNumber      String?
+  accountName        String?
+  swiftCode          String?
+  iban               String?
+  routingNumber      String?
+  bankAddress        String?
+  beneficiaryAddress String?
+  cryptoAddress      String?
+  cryptoNetwork      String?
+  paypalEmail        String?
+  cardLastFour       String?
+  userNotes          String?
+  adminNotes         String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Deposit {
+  id              String   @id @default(uuid())
+  userId          String
+  userEmail       String
+  userName        String
+  amount          Float
+  method          String
+  status          String
+  transactionHash String?
+  fromAddress     String?
+  toAddress       String?
+  adminNotes      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([transactionHash])
 }
 
 enum TransactionType {
@@ -128,75 +184,4 @@ enum TransactionStatus {
   COMPLETED
   FAILED
   CANCELLED
-}
-
-// Add to your existing schema - AFTER the existing models
-
-model Withdrawal {
-  id            String   @id @default(uuid())
-  userId        String
-  userEmail     String
-  userName      String
-  amount        Float
-  method        String   // bank, crypto, paypal, card
-  status        String   // pending, processing, completed, rejected, cancelled
-  
-  // Bank details
-  bankName          String?
-  accountNumber     String?
-  accountName       String?
-  swiftCode         String?
-  iban              String?
-  routingNumber     String?
-  bankAddress       String?
-  beneficiaryAddress String?
-  
-  // Crypto details
-  cryptoAddress     String?
-  cryptoNetwork     String?
-  
-  // Other methods
-  paypalEmail       String?
-  cardLastFour      String?
-  
-  // Notes
-  userNotes         String?  // Notes from user
-  adminNotes        String?  // Notes from admin
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@index([userId])
-  @@index([status])
-  @@index([createdAt])
-}
-
-model Deposit {
-  id              String   @id @default(uuid())
-  userId          String
-  userEmail       String
-  userName        String
-  amount          Float
-  method          String   // crypto, card, bank, etc.
-  status          String   // pending, completed, failed
-  
-  // Crypto specific
-  transactionHash String?
-  fromAddress     String?
-  toAddress       String?
-  
-  // Admin notes
-  adminNotes      String?
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@index([userId])
-  @@index([status])
-  @@index([createdAt])
-  @@index([transactionHash])
 }
