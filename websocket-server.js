@@ -53,21 +53,26 @@ class TrueMarketEngine {
   calculateTrueRandomMovement(currentPrice, isHistorical = false) {
   let movement = 0;
   const direction = Math.random();
-  const strength = Math.random() * 0.0003; // Very small
-  const struggle = Math.random() * 0.0001; // Tiny
-  const fakeout = Math.random() > 0.95 ? (Math.random() - 0.5) * 0.0005 : 0; // Rare and small
-  const volatilityBurst = Math.random() > 0.99 ? (Math.random() - 0.5) * 0.0002 : 0; // Very rare
+  
+  // BTC-like movements (small but realistic)
+  const strength = Math.random() * 0.0020; // Normal BTC volatility
+  const struggle = Math.random() * 0.0010;
+  const fakeout = Math.random() > 0.9 ? (Math.random() - 0.5) * 0.0050 : 0;
+  const volatilityBurst = Math.random() > 0.95 ? (Math.random() - 0.5) * 0.0030 : 0;
   
   if (direction > 0.55) {  // 45% UP
     movement = strength + struggle + fakeout + volatilityBurst;
   } else if (direction < 0.45) {  // 45% DOWN  
     movement = -strength - struggle + fakeout + volatilityBurst;
   } else {  // 10% SIDEWAYS
-    movement = (Math.random() - 0.5) * 0.00005 + fakeout; // Very tiny
+    movement = (Math.random() - 0.5) * 0.0005 + fakeout;
   }
   
-  const volumeFactor = 1 + (Math.random() * 0.1); // Minimal amplification
+  const volumeFactor = 1 + (Math.random() * 0.3);
   movement *= volumeFactor;
+  
+  // Ensure realistic BTC-like movements (0.1% - 2% typical)
+  movement = Math.max(-0.02, Math.min(0.02, movement));
   
   return movement;
 }
