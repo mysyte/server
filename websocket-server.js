@@ -1,16 +1,51 @@
 const { Server } = require('http');
 const { Server: SocketIOServer } = require('socket.io');
+const fs = require('fs');
+
+const PRICE_FILE = 'price_state.json';
 
 // True Random Market Engine
 class TrueMarketEngine {
   constructor() {
     this.currentPrice = 1.00;
-    this.basePrice = 1.00; // Starting price for percentage calculation
+    this.basePrice = 1.00;
     this.currentCandle = this.createNewCandle();
     this.historicalCandles = [];
     this.userPositions = new Map();
+    
+    // ✅ LOAD PERSISTED PRICE
+    this.loadPriceState();
+    
     this.generateHistoricalData();
     console.log('🎲 True Random Market Engine Started on Server');
+  }
+
+  // ✅ LOAD PRICE FROM FILE
+  loadPriceState() {
+    try {
+      if (fs.existsSync(PRICE_FILE)) {
+        const data = JSON.parse(fs.readFileSync(PRICE_FILE, 'utf8'));
+        this.currentPrice = data.currentPrice || 1.00;
+        this.basePrice = data.basePrice || 1.00;
+        console.log('💰 Loaded persisted price: $' + this.currentPrice.toFixed(4));
+      }
+    } catch (error) {
+      console.log('❌ No persisted price found, starting at $1.00');
+    }
+  }
+
+  // ✅ SAVE PRICE TO FILE
+  savePriceState() {
+    try {
+      const data = {
+        currentPrice: this.currentPrice,
+        basePrice: this.basePrice,
+        timestamp: Date.now()
+      };
+      fs.writeFileSync(PRICE_FILE, JSON.stringify(data));
+    } catch (error) {
+      console.log('❌ Failed to save price state');
+    }
   }
 
   createNewCandle() {
@@ -27,7 +62,7 @@ class TrueMarketEngine {
   }
 
   generateHistoricalData() {
-    let price = 1.00;
+    let price = this.currentPrice; // ✅ USE PERSISTED PRICE
     for (let i = 23; i >= 0; i--) {
       const timestamp = Date.now() - i * 3600000;
       
@@ -124,6 +159,9 @@ class TrueMarketEngine {
         this.historicalCandles.shift();
       }
       this.currentCandle = this.createNewCandle();
+      
+      // ✅ SAVE PRICE EVERY NEW CANDLE (EVERY MINUTE)
+      this.savePriceState();
     }
 
     // Calculate percentage change from base price $1.00
