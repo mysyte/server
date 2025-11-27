@@ -25,7 +25,7 @@ export interface PriceData {
 }
 
 class PriceEngine {
-  private currentPrice: number = 1.00;
+  private currentPrice: number = 0.0400;
   private currentCandle: Candle;
   private historicalCandles: Candle[] = [];
   private marketSettings: MarketSettings = {
